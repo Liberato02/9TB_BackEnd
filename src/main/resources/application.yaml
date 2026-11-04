@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: 9tb-backend
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/tpsp_db
+    username: postgres
+    password: ${DB_PASSWORD}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+  flyway:
+    enabled: true
