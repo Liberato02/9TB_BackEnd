@@ -34,6 +34,22 @@ public class TituloService {
             return false;
         }
 
+        cadastrarTitulo(registro);
+        return true;
+    }
+
+    @Transactional
+    public Titulo buscarOuCriarTitulo(ImportacaoCsvDTO registro) {
+
+        return tituloRepository
+                .findByNumeroProtocoloAndDataProtocolo(
+                        registro.numeroProtocolo(),
+                        registro.dataProtocolo())
+                .orElseGet(() -> cadastrarTitulo(registro));
+    }
+
+    private Titulo cadastrarTitulo(ImportacaoCsvDTO registro) {
+
         Apresentante apresentante = importacaoCsvService.identificarApresentante(registro);
 
         Titulo titulo = new Titulo();
@@ -44,8 +60,6 @@ public class TituloService {
         titulo.setValorCustas(registro.valorCustas());
         titulo.setValorTitulo(registro.valorTitulo());
 
-        tituloRepository.save(titulo);
-
-        return true;
+        return tituloRepository.save(titulo);
     }
 }

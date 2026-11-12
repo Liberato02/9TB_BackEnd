@@ -2,14 +2,20 @@
 package br.com.nonetpsp.backend.service;
 
 import br.com.nonetpsp.backend.dto.ImportacaoCsvDTO;
+import br.com.nonetpsp.backend.entity.Campanha;
+import br.com.nonetpsp.backend.entity.Titulo;
+import br.com.nonetpsp.backend.repository.TituloRepository;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 @Service
 public class ImportadorTitulosCsvService {
@@ -31,17 +37,23 @@ public class ImportadorTitulosCsvService {
     private final InterpretadorCsvService interpretadorCsvService;
     private final TituloService tituloService;
     private final SeparadorCsvService separadorCsvService;
+    private final CampanhaService campanhaService;
+    private final TituloRepository tituloRepository;
 
     public ImportadorTitulosCsvService(
             LeitorCsvService leitorCsvService,
             InterpretadorCsvService interpretadorCsvService,
             TituloService tituloService,
-            SeparadorCsvService separadorCsvService) {
+            SeparadorCsvService separadorCsvService,
+            CampanhaService campanhaService,
+            TituloRepository tituloRepository) {
 
         this.leitorCsvService = leitorCsvService;
         this.interpretadorCsvService = interpretadorCsvService;
         this.tituloService = tituloService;
         this.separadorCsvService = separadorCsvService;
+        this.campanhaService = campanhaService;
+        this.tituloRepository = tituloRepository;
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -62,27 +74,60 @@ public class ImportadorTitulosCsvService {
                     "O arquivo CSV não possui registros.");
         }
 
-        int importados = 0;
-        int duplicados = 0;
+        // Interpreta os registros antes de criar a campanha
+        List<ImportacaoCsvDTO> registros = new ArrayList<>();
 
         for (int i = 1; i < linhas.size(); i++) {
+            registros.add(
+                    interpretadorCsvService.interpretarLinha(linhas.get(i)));
+        }
 
-            String linha = linhas.get(i);
+        Campanha campanha = campanhaService.criarCampanha();
 
-            ImportacaoCsvDTO registro = interpretadorCsvService.interpretarLinha(linha);
+        int titulosNovos = 0;
+        int titulosExistentes = 0;
+        int titulosAssociados = 0;
+        int duplicadosNoCsv = 0;
 
-            boolean importado = tituloService.importarTitulo(registro);
+        Set<String> protocolosProcessados = new HashSet<>();
 
-            if (importado) {
-                importados++;
+        for (ImportacaoCsvDTO registro : registros) {
+
+            String chave = registro.numeroProtocolo()
+                    + "|" + registro.dataProtocolo();
+
+            if (!protocolosProcessados.add(chave)) {
+                duplicadosNoCsv++;
+                continue;
+            }
+
+            boolean jaExiste = tituloRepository.existsByNumeroProtocoloAndDataProtocolo(
+                    registro.numeroProtocolo(),
+                    registro.dataProtocolo());
+
+            Titulo titulo = tituloService.buscarOuCriarTitulo(registro);
+
+            if (jaExiste) {
+                titulosExistentes++;
             } else {
-                duplicados++;
+                titulosNovos++;
+            }
+
+            boolean associado = campanhaService.associarTitulo(
+                    campanha, titulo);
+
+            if (associado) {
+                titulosAssociados++;
             }
         }
 
         return new ResultadoImportacao(
-                importados,
-                duplicados);
+                campanha.getId(),
+                campanha.getNome(),
+                titulosNovos,
+                titulosExistentes,
+                titulosAssociados,
+                duplicadosNoCsv);
     }
 
     private void validarCabecalho(String linha) {
@@ -110,7 +155,11 @@ public class ImportadorTitulosCsvService {
     }
 
     public record ResultadoImportacao(
-            int importados,
-            int duplicados) {
+            Long campanhaId,
+            String campanhaNome,
+            int titulosNovos,
+            int titulosExistentes,
+            int titulosAssociados,
+            int duplicadosNoCsv) {
     }
 }
