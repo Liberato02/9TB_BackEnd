@@ -71,6 +71,13 @@
 			<artifactId>spring-boot-starter-restclient</artifactId>
 		</dependency>
 
+		<!-- LEITURA DE ARQUIVOS PDF -->
+		<dependency>
+			<groupId>org.apache.pdfbox</groupId>
+			<artifactId>pdfbox</artifactId>
+			<version>3.0.8</version>
+		</dependency>
+
 		<!-- TESTES -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
