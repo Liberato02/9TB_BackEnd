@@ -93,7 +93,11 @@ public class ImportadorTitulosCsvService {
 
         for (ImportacaoCsvDTO registro : registros) {
 
-            String chave = registro.numeroProtocolo()
+            // Remove zeros à esquerda apenas para comparação
+            String numeroNormalizado = normalizarProtocolo(
+                    registro.numeroProtocolo());
+
+            String chave = numeroNormalizado
                     + "|" + registro.dataProtocolo();
 
             if (!protocolosProcessados.add(chave)) {
@@ -101,9 +105,13 @@ public class ImportadorTitulosCsvService {
                 continue;
             }
 
-            boolean jaExiste = tituloRepository.existsByNumeroProtocoloAndDataProtocolo(
-                    registro.numeroProtocolo(),
-                    registro.dataProtocolo());
+            // Verifica se o título já existe, independentemente
+            // dos zeros à esquerda
+            boolean jaExiste = tituloRepository
+                    .buscarPorProtocoloNormalizado(
+                            registro.numeroProtocolo(),
+                            registro.dataProtocolo())
+                    .isPresent();
 
             Titulo titulo = tituloService.buscarOuCriarTitulo(registro);
 
@@ -128,6 +136,13 @@ public class ImportadorTitulosCsvService {
                 titulosExistentes,
                 titulosAssociados,
                 duplicadosNoCsv);
+    }
+
+    private String normalizarProtocolo(String numero) {
+
+        String normalizado = numero.replaceFirst("^0+(?!$)", "");
+
+        return normalizado;
     }
 
     private void validarCabecalho(String linha) {

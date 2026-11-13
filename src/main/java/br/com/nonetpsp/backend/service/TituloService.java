@@ -26,9 +26,11 @@ public class TituloService {
     @Transactional
     public boolean importarTitulo(ImportacaoCsvDTO registro) {
 
-        boolean jaExiste = tituloRepository.existsByNumeroProtocoloAndDataProtocolo(
-                registro.numeroProtocolo(),
-                registro.dataProtocolo());
+        boolean jaExiste = tituloRepository
+                .buscarPorProtocoloNormalizado(
+                        registro.numeroProtocolo(),
+                        registro.dataProtocolo())
+                .isPresent();
 
         if (jaExiste) {
             return false;
@@ -42,7 +44,7 @@ public class TituloService {
     public Titulo buscarOuCriarTitulo(ImportacaoCsvDTO registro) {
 
         return tituloRepository
-                .findByNumeroProtocoloAndDataProtocolo(
+                .buscarPorProtocoloNormalizado(
                         registro.numeroProtocolo(),
                         registro.dataProtocolo())
                 .orElseGet(() -> cadastrarTitulo(registro));
