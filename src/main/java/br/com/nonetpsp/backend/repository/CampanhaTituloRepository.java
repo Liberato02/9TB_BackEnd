@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface CampanhaTituloRepository
                 extends JpaRepository<CampanhaTitulo, Long> {
@@ -43,5 +45,16 @@ public interface CampanhaTituloRepository
                           )
                         """, nativeQuery = true)
         long contarTitulosCanceladosPorCampanha(
+                        @Param("campanhaId") Long campanhaId);
+
+        @Query("""
+                        SELECT ct
+                        FROM CampanhaTitulo ct
+                        JOIN FETCH ct.titulo t
+                        JOIN FETCH t.apresentante
+                        WHERE ct.campanha.id = :campanhaId
+                        ORDER BY t.dataProtocolo DESC, t.numeroProtocolo
+                        """)
+        List<CampanhaTitulo> listarTitulosPorCampanha(
                         @Param("campanhaId") Long campanhaId);
 }
