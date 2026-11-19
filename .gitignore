@@ -40,3 +40,8 @@ application-local.yaml
 application-local.yml
 *.pem
 *.key
+# Arquivos locais utilizados em testes manuais
+/cancelamentosfeitos.pdf
+/teste_cancelamento.csv
+/teste_importacao.csv
+/teste_invalido.csv
