@@ -1,5 +1,7 @@
 package br.com.nonetpsp.backend.config.security;
 
+import br.com.nonetpsp.backend.repository.UsuarioRepository;
+
 import jakarta.servlet.DispatcherType;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -8,6 +10,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 import org.springframework.security.web.savedrequest.NullRequestCache;
@@ -16,8 +19,9 @@ import org.springframework.security.web.savedrequest.NullRequestCache;
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http)
-            throws Exception {
+    public SecurityFilterChain securityFilterChain(
+            HttpSecurity http,
+            UsuarioRepository usuarioRepository) throws Exception {
 
         http
                 .csrf(csrf -> csrf.spa())
@@ -41,7 +45,10 @@ public class SecurityConfig {
                         .authenticationEntryPoint(
                                 new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .requestCache(cache -> cache
-                        .requestCache(new NullRequestCache()));
+                        .requestCache(new NullRequestCache()))
+                .addFilterAfter(
+                        new ContaAtivaFilter(usuarioRepository),
+                        AnonymousAuthenticationFilter.class);
 
         return http.build();
     }

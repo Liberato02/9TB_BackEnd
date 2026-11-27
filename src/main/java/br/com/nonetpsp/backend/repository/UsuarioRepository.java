@@ -24,4 +24,6 @@ public interface UsuarioRepository
     boolean existsByNivelAcesso(NivelAcesso nivelAcesso);
 
     boolean existsByEmailIgnoreCase(String email);
+
+    boolean existsByIdAndAtivoTrue(Long id);
 }
