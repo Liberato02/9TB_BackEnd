@@ -9,7 +9,10 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -36,5 +39,33 @@ class SecurityTests {
                 String.class);
 
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+    }
+
+    @Test
+    void deveResponderNaoAutorizadoSemSessao() {
+
+        ResponseEntity<String> response = restTemplate.getForEntity(
+                "/api/auth/eu",
+                String.class);
+
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+    }
+
+    @Test
+    void deveRecusarEntradaSemTokenCsrf() {
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        MultiValueMap<String, String> corpo = new LinkedMultiValueMap<>();
+        corpo.add("identificador", "usuario-inexistente");
+        corpo.add("senha", "senha-incorreta");
+
+        ResponseEntity<String> response = restTemplate.postForEntity(
+                "/api/auth/entrar",
+                new HttpEntity<>(corpo, headers),
+                String.class);
+
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
     }
 }
